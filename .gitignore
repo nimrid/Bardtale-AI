@@ -1,0 +1,38 @@
+# Dependencies
+node_modules/
+client/node_modules/
+
+# Build outputs
+dist/
+client/dist/
+
+# Python cache and environments
+__pycache__/
+server/__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+env/
+
+# Database & Generated Storage / Media
+*.db
+*.sqlite
+*.sqlite3
+*.png
+*.mp3
+server/storage/*.db
+server/storage/images/*
+server/storage/pdfs/*
+server/storage/audio/*
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# System & IDE files
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
