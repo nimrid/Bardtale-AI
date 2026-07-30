@@ -1,6 +1,7 @@
 import { Tier, Order, CreateOrderResponse, CustomizationForm } from '../types';
 
-const API_BASE = '/api';
+const BASE_URL = (import.meta.env.VITE_API_BASE_URL || 'https://bardtale-ai.onrender.com').replace(/\/$/, '');
+const API_BASE = `${BASE_URL}/api`;
 
 export async function fetchTiers(): Promise<{ receiver_wallet: string; tiers: Tier[] }> {
   const res = await fetch(`${API_BASE}/tiers`);
