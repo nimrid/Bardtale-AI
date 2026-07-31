@@ -1,7 +1,8 @@
 {
-  "name": "storybook-commission-mini-app",
+  "name": "bardtale-ai-mini-app",
   "private": true,
   "version": "1.0.0",
+  "license": "MIT",
   "type": "module",
   "scripts": {
     "dev": "vite",
