@@ -1,30 +1,34 @@
-# 📖 Storybook Commission — Nimiq Pay Mini App
+# 🎨 Bardtale AI — Nimiq Pay Mini App
 
-> **AI-Powered Illustrated Storybooks Running Directly Inside Nimiq Pay**
+> **Commission AI Storybooks, Custom Artworks & Witcher-Style Bardic Ballads Directly Inside Nimiq Pay**
 
 [![Nimiq Pay Mini App](https://img.shields.io/badge/Nimiq%20Pay-Mini%20App-yellow?style=for-the-badge&logo=nimiq)](https://nimiq.com)
 [![FastAPI](https://img.shields.io/badge/Backend-FastAPI-009688?style=for-the-badge&logo=fastapi)](https://fastapi.tiangolo.com/)
 [![React + Vite](https://img.shields.io/badge/Frontend-React%20%2B%20Vite-61DAFB?style=for-the-badge&logo=react)](https://react.dev/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.7-3178C6?style=for-the-badge&logo=typescript)](https://www.typescriptlang.org/)
 
-**Storybook Commission** is a full-stack Nimiq Pay Mini App that allows users to commission personalized, AI-illustrated storybooks using NIM payments. The application integrates directly with Nimiq Pay's injected provider and `@nimiq/mini-app-sdk` for seamless wallet connection, device-scoped session tracking, and payment-gated AI pipelines.
+**Bardtale AI** is a full-stack Nimiq Pay Mini App that allows creators to commission personalized, AI-illustrated storybooks and Witcher-style fantasy music ballads using NIM payments. The application integrates directly with Nimiq Pay's injected provider and `@nimiq/mini-app-sdk` for seamless wallet connection, device-scoped session tracking, and payment-gated AI pipelines.
 
 ---
 
 ## ✨ Features
 
-- 🎨 **Personalized AI Storybooks**: Enter character names, themes, and special details to generate custom story scripts and matching watercolor digital illustrations.
-- ⚡ **Payment-Gated AI Pipeline**: Server execution of Anthropic Claude & Stability AI is strictly gated behind verified NIM transactions.
+- 📖 **Personalized AI Storybooks**: Enter character names, themes, and special details to generate custom story scripts with matching digital watercolor illustrations.
+- 🎵 **Bardic Music & Story Ballad Studio**: Powered by **Stable Audio 2.5**, compose authentic Witcher-style tavern songs, minstrel ballads, and fantasy soundscapes up to 3 minutes in 44.1kHz stereo.
+- ⚡ **Payment-Gated AI Pipeline**: Server execution of Anthropic Claude 4.5, Stable Diffusion 3.5 Large Turbo, and Stable Audio 2.5 is strictly gated behind verified NIM transactions.
 - 🛡️ **Native Nimiq Pay SDK Integration**:
   - **Provider Connection**: Native `init({ timeout: 10000 })` connection helper.
   - **Device Scoped ID**: `requestDeviceIdentifier` for persistent order history without login credentials.
   - **Locale Aware**: Reads `window.nimiqPay.language` for localized UI text.
   - **Wallet Operations**: `listAccounts()`, `sendBasicTransactionWithData()`, and `sendBasicTransaction`.
 - 📚 **Multi-Tier Commission Options**:
-  - **Mini Story** (100 NIM): 3 pages, 1 custom cover artwork.
-  - **Standard Story** (250 NIM): 5 pages, 3 rich illustrations.
-  - **Deluxe Edition** (500 NIM): 8 pages, full artwork on every page.
+  - **Mini Story** (500 NIM): 3 pages, 1 custom cover artwork.
+  - **Standard Story** (1,500 NIM): 5 pages, 3 rich illustrations.
+  - **Deluxe Edition** (3,000 NIM): 8 pages, full artwork on every page.
+  - **Bardic Song** (2,500 NIM): Custom 44.1kHz stereo MP3 music track via Stable Audio 2.5.
 - 📄 **PDF Export**: Assembles and downloads a print-ready PDF storybook.
+- 🎵 **In-App Audio Player**: Features an interactive audio waveform visualizer and 1-click MP3 download.
+- 📱 **Collapsible Sidebar Navigation**: Mobile-optimized slide-over menu drawer for quick navigation inside Nimiq Pay.
 - 🧪 **Browser Dev Sandbox**: Automatic fallback simulation mode for testing in standard web browsers outside Nimiq Pay.
 
 ---
@@ -33,19 +37,20 @@
 
 ```mermaid
 graph TD
-    A[Nimiq Pay Mobile App WebView] -->|Injected Provider| B[React + Vite Frontend]
-    B -->|@nimiq/mini-app-sdk| C[Nimiq Pay Native Wallet Host]
-    C -->|Native Confirmation Dialog| D[Nimiq Blockchain]
-    B -->|REST API| E[FastAPI Python Backend]
-    E -->|Anthropic API| F[Claude Story Generator]
-    E -->|Stability AI / Fal.ai| G[Diffusion Image Generator]
-    E -->|ReportLab| H[PDF Assembler]
+    A[Nimiq Pay Mobile App WebView] -->|"Injected Provider"| B[React + Vite Frontend]
+    B -->|"@nimiq/mini-app-sdk"| C[Nimiq Pay Native Wallet Host]
+    C -->|"Native Confirmation Dialog"| D[Nimiq Blockchain]
+    B -->|"REST API"| E[FastAPI Python Backend]
+    E -->|"Anthropic API"| F[Claude 4.5 Story Generator]
+    E -->|"Stability AI SD 3.5"| G[Diffusion Image Generator]
+    E -->|"Stable Audio 2.5"| H[Bardic Music Generator]
+    E -->|"ReportLab"| I[PDF Assembler]
 ```
 
 - **Frontend**: React 19, TypeScript, Vite, Lucide Icons, Canvas Confetti.
 - **Backend**: FastAPI, PyPDF / ReportLab, SQLite, Uvicorn.
 - **SDK**: `@nimiq/mini-app-sdk` v0.1.0+.
-- **AI Models**: Anthropic Claude (Scripting), Stability AI / Fal.ai (Illustrations).
+- **AI Models**: Anthropic Claude 4.5 Haiku (Scripting), Stable Diffusion 3.5 Large Turbo (Illustrations), Stable Audio 2.5 (Music).
 
 ---
 
@@ -60,8 +65,8 @@ graph TD
 ### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/your-username/storybook-commission-mini-app.git
-cd storybook-commission-mini-app
+git clone https://github.com/your-username/bardtale-ai-mini-app.git
+cd bardtale-ai-mini-app
 ```
 
 ### 2. Configure Environment Variables
@@ -107,7 +112,7 @@ npm run dev -- --host
 Vite will output local and network URLs:
 
 ```text
-  VITE v6.1.0  ready in 320 ms
+  VITE v6.4.3  ready in 320 ms
 
   ➜  Local:   http://localhost:5173/
   ➜  Network: http://192.168.1.42:5173/
@@ -131,7 +136,7 @@ To test transactions inside **Nimiq Pay** on the Nimiq Testnet, follow these ste
 ### Option B: Testing in Browser Sandbox Mode
 If you run the app directly in a standard web browser (e.g. `http://localhost:5173`), the Mini App SDK automatically activates **Sandbox Dev Mode**:
 - Wallet connections and payments are simulated smoothly without needing real or testnet NIM.
-- All AI story generation steps proceed seamlessly for local UI and backend development.
+- All AI story and music generation steps proceed seamlessly for local UI and backend development.
 
 ---
 
@@ -176,8 +181,8 @@ const language = window.nimiqPay?.language || 'en';
 // 4. Send basic transaction with data memo (Luna conversion: 1 NIM = 100,000 Luna)
 const txHash = await nimiq.sendBasicTransactionWithData({
   recipient: 'NQ07 0000 0000 0000 0000 0000 0000 0000 0000',
-  value: 250 * 100000,
-  data: 'Story Commission #REF12345'
+  value: 1500 * 100000,
+  data: 'Bardtale AI Commission #REF12345'
 });
 ```
 
@@ -186,20 +191,20 @@ const txHash = await nimiq.sendBasicTransactionWithData({
 ## 📁 Project Structure
 
 ```text
-storybook-commission-mini-app/
+bardtale-ai-mini-app/
 ├── client/                     # React + Vite Frontend
 │   ├── src/
-│   │   ├── components/         # Header, TierSelector, PaymentCard, ProgressTracker, ResultView
+│   │   ├── components/         # Header, SidebarNav, MusicStudio, TierSelector, PaymentCard, ProgressTracker, ResultView, BardtaleLogo
 │   │   ├── services/           # nimiqSdk.ts (Mini App SDK), api.ts
-│   │   ├── App.tsx             # Main Application Flow
+│   │   ├── App.tsx             # Main Application Flow & Mode Switcher
 │   │   └── main.tsx            # Entry Point
 │   ├── package.json
 │   └── vite.config.ts          # Network host (5173) & Proxy Setup
 ├── server/                     # FastAPI Python Backend
-│   ├── services/               # pipeline.py (Claude & Stability AI generators)
-│   ├── config.py               # Tier prices & RECEIVER_WALLET_ADDRESS
-│   ├── database.py             # SQLite order & history persistence
-│   ├── main.py                 # FastAPI routes & static file server
+│   ├── services/               # pipeline.py (Claude & SD 3.5), audio_service.py (Stable Audio 2.5), pdf_service.py
+│   ├── config.py               # Tier prices, Stable Audio config, & RECEIVER_WALLET_ADDRESS
+│   ├── database.py             # SQLite orders, music_tracks & history persistence
+│   ├── main.py                 # FastAPI routes, audio streaming & static server
 │   └── requirements.txt
 ├── .env                        # Environment Configuration
 └── README.md

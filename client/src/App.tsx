@@ -145,8 +145,11 @@ export const App: React.FC = () => {
             deviceId={deviceId}
             isSdkAvailable={isSdkAvailable}
             receiverWallet={receiverWallet}
+            userAddress={userAddress}
+            onFetchAccounts={handleFetchAccounts}
           />
         ) : (
+
           <>
             {step === 1 && (
               <TierSelector

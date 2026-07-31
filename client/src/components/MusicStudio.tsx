@@ -1,12 +1,15 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { createMusicTrack, fetchMusicTrackStatus, getMusicStreamUrl } from '../services/api';
-import { Music, Play, Pause, Download, Loader2, Sparkles, RefreshCw, Wand2, Volume2, Clock, CheckCircle } from 'lucide-react';
+import { requestNimPayment } from '../services/nimiqSdk';
+import { Music, Play, Pause, Download, Loader2, Sparkles, RefreshCw, Wand2, Volume2, Clock, CheckCircle, Wallet, Lock, ShieldCheck, ArrowLeft, AlertCircle } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
 interface MusicStudioProps {
   deviceId: string;
   isSdkAvailable: boolean;
   receiverWallet: string;
+  userAddress?: string | null;
+  onFetchAccounts?: () => void;
 }
 
 interface SongPreset {
@@ -48,12 +51,22 @@ const PRESETS: SongPreset[] = [
   }
 ];
 
-export const MusicStudio: React.FC<MusicStudioProps> = ({ deviceId, isSdkAvailable, receiverWallet }) => {
+export const MusicStudio: React.FC<MusicStudioProps> = ({ 
+  deviceId, 
+  isSdkAvailable, 
+  receiverWallet, 
+  userAddress, 
+  onFetchAccounts 
+}) => {
   const [selectedPreset, setSelectedPreset] = useState<SongPreset>(PRESETS[0]);
   const [customPrompt, setCustomPrompt] = useState<string>(PRESETS[0].prompt);
   const [title, setTitle] = useState<string>('The Minstrel\'s Tale');
   const [duration, setDuration] = useState<number>(30);
   
+  const [showPaymentStep, setShowPaymentStep] = useState<boolean>(false);
+  const [isProcessingPayment, setIsProcessingPayment] = useState<boolean>(false);
+  const [paymentStatus, setPaymentStatus] = useState<string>('Ready for payment');
+
   const [generating, setGenerating] = useState<boolean>(false);
   const [activeTrackId, setActiveTrackId] = useState<string | null>(null);
   const [completedTrack, setCompletedTrack] = useState<any | null>(null);
@@ -65,29 +78,58 @@ export const MusicStudio: React.FC<MusicStudioProps> = ({ deviceId, isSdkAvailab
   const [currentTime, setCurrentTime] = useState<number>(0);
   const [totalDuration, setTotalDuration] = useState<number>(0);
 
+  const getDurationNimPrice = (dur: number) => {
+    if (dur <= 30) return 1000;
+    if (dur <= 60) return 2000;
+    if (dur <= 120) return 3500;
+    return 5000;
+  };
+  const nimPrice = getDurationNimPrice(duration);
+  const lunaAmount = nimPrice * 100000;
+
   const handleSelectPreset = (preset: SongPreset) => {
     setSelectedPreset(preset);
     setCustomPrompt(preset.prompt);
     setTitle(`${preset.name}`);
   };
 
-  const handleGenerate = async () => {
+  const handleInitiatePayment = () => {
     if (!deviceId) {
       alert('Device identifier not ready. Please refresh the page.');
       return;
     }
-
-    setGenerating(true);
+    setShowPaymentStep(true);
     setError(null);
-    setCompletedTrack(null);
-    setIsPlaying(false);
+  };
+
+  const handleExecuteNimPayment = async () => {
+    setIsProcessingPayment(true);
+    setError(null);
 
     try {
-      const resp = await createMusicTrack(deviceId, customPrompt, title, duration);
+      setPaymentStatus('Opening Nimiq Pay Wallet...');
+      
+      // Step 1: Trigger NIM payment transaction via Nimiq Pay SDK
+      const payResult = await requestNimPayment(nimPrice, receiverWallet, title);
+      
+      if (!payResult.success) {
+        throw new Error('Wallet payment was not completed');
+      }
+
+      setPaymentStatus('Payment confirmed! Starting Stable Audio composition...');
+      setShowPaymentStep(false);
+      setGenerating(true);
+      setCompletedTrack(null);
+      setIsPlaying(false);
+
+      // Step 2: Server-side music generation post-payment
+      const resp = await createMusicTrack(deviceId, customPrompt, title, duration, nimPrice, payResult.txHash);
       setActiveTrackId(resp.track_id);
     } catch (err: any) {
-      setError(err.message || 'Failed to start music generation');
-      setGenerating(false);
+      console.error('Music payment error:', err);
+      setError(err.message || 'Payment processing failed');
+    } finally {
+      setIsProcessingPayment(false);
     }
   };
 
@@ -115,6 +157,7 @@ export const MusicStudio: React.FC<MusicStudioProps> = ({ deviceId, isSdkAvailab
 
     return () => clearInterval(pollTimer);
   }, [activeTrackId, generating]);
+
 
   // Audio Handlers
   const togglePlay = () => {
@@ -325,26 +368,152 @@ export const MusicStudio: React.FC<MusicStudioProps> = ({ deviceId, isSdkAvailab
           </div>
         </div>
 
-        {/* Generate Commission Button */}
-        <div style={{ marginTop: '24px', textAlign: 'center' }}>
-          <button
-            onClick={handleGenerate}
-            disabled={generating || !customPrompt.trim()}
-            className="btn-primary"
-            style={{ width: '100%', maxWidth: '380px', margin: '0 auto' }}
-          >
-            {generating ? (
-              <>
-                <Loader2 size={18} className="animate-spin" /> Composing Song...
-              </>
-            ) : (
-              <>
-                <Music size={18} /> Commission Ballad (2,500 NIM)
-              </>
-            )}
-          </button>
-        </div>
+        {/* Song Payment Review Card */}
+        {showPaymentStep ? (
+          <div style={{
+            marginTop: '24px',
+            padding: '20px',
+            borderRadius: '16px',
+            background: 'rgba(15, 23, 42, 0.85)',
+            border: '1px solid rgba(5, 211, 178, 0.3)',
+            animation: 'fadeIn 0.3s ease'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px' }}>
+              <button 
+                onClick={() => setShowPaymentStep(false)} 
+                disabled={isProcessingPayment} 
+                className="btn-secondary" 
+                style={{ padding: '4px 10px', fontSize: '0.75rem', minHeight: '32px' }}
+              >
+                <ArrowLeft size={14} /> Back to Edit
+              </button>
+              <div style={{
+                fontSize: '0.72rem',
+                padding: '4px 10px',
+                borderRadius: '999px',
+                background: 'rgba(5, 211, 178, 0.15)',
+                color: '#05D3B2',
+                fontWeight: 700,
+                display: 'flex',
+                alignItems: 'center',
+                gap: '4px'
+              }}>
+                <Lock size={12} /> Payment-Gated Song Composition
+              </div>
+            </div>
+
+            <h4 className="font-serif gradient-text-gold" style={{ fontSize: '1.2rem', fontWeight: 700, marginBottom: '6px', textAlign: 'center' }}>
+              Confirm & Stake {nimPrice.toLocaleString()} NIM
+            </h4>
+            <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', textAlign: 'center', marginBottom: '16px' }}>
+              Mediated by Nimiq Pay native confirmation dialogs. Keys never leave your wallet.
+            </p>
+
+            {/* Payer Wallet Box */}
+            <div style={{
+              background: 'rgba(5, 211, 178, 0.08)',
+              border: '1px solid rgba(5, 211, 178, 0.25)',
+              borderRadius: '12px',
+              padding: '10px 14px',
+              marginBottom: '14px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              flexWrap: 'wrap',
+              gap: '6px'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <Wallet size={16} color="#05D3B2" />
+                <div>
+                  <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', display: 'block' }}>Payer Wallet</span>
+                  {userAddress ? (
+                    <span style={{ fontFamily: 'monospace', fontSize: '0.78rem', color: '#05D3B2', fontWeight: 600 }}>
+                      {userAddress}
+                    </span>
+                  ) : (
+                    <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)', fontStyle: 'italic' }}>
+                      Nimiq Wallet Connected
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              {!userAddress && isSdkAvailable && onFetchAccounts && (
+                <button 
+                  onClick={onFetchAccounts}
+                  className="btn-secondary"
+                  style={{ padding: '4px 8px', fontSize: '0.72rem', minHeight: '28px' }}
+                >
+                  <ShieldCheck size={12} /> Connect Wallet
+                </button>
+              )}
+            </div>
+
+            {/* Song Transaction Details */}
+            <div style={{
+              background: 'rgba(255, 255, 255, 0.03)',
+              borderRadius: '12px',
+              padding: '12px 14px',
+              fontSize: '0.8rem',
+              marginBottom: '16px',
+              border: '1px solid rgba(255, 255, 255, 0.08)'
+            }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
+                <span style={{ color: 'var(--text-muted)' }}>Song Title:</span>
+                <strong style={{ color: 'var(--text-main)' }}>{title}</strong>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
+                <span style={{ color: 'var(--text-muted)' }}>Audio Duration:</span>
+                <strong>{duration}s ({duration / 60}m)</strong>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', paddingTop: '8px', borderTop: '1px solid rgba(255, 255, 255, 0.08)', fontWeight: 700 }}>
+                <span style={{ color: 'var(--text-main)' }}>Total NIM Stake:</span>
+                <span style={{ color: 'var(--primary-gold)', fontSize: '1.05rem' }}>
+                  {nimPrice.toLocaleString()} NIM <small style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 400 }}>({lunaAmount.toLocaleString()} Luna)</small>
+                </span>
+              </div>
+            </div>
+
+            <button
+              onClick={handleExecuteNimPayment}
+              disabled={isProcessingPayment}
+              className="btn-primary"
+              style={{ width: '100%' }}
+            >
+              {isProcessingPayment ? (
+                <>
+                  <Loader2 size={18} className="animate-spin" /> {paymentStatus}
+                </>
+              ) : (
+                <>
+                  <Wallet size={18} /> Pay {nimPrice.toLocaleString()} NIM via Nimiq Wallet
+                </>
+              )}
+            </button>
+          </div>
+        ) : (
+          /* Generate Commission Button */
+          <div style={{ marginTop: '24px', textAlign: 'center' }}>
+            <button
+              onClick={handleInitiatePayment}
+              disabled={generating || !customPrompt.trim()}
+              className="btn-primary"
+              style={{ width: '100%', maxWidth: '380px', margin: '0 auto' }}
+            >
+              {generating ? (
+                <>
+                  <Loader2 size={18} className="animate-spin" /> Composing Song...
+                </>
+              ) : (
+                <>
+                  <Music size={18} /> Commission Song ({nimPrice.toLocaleString()} NIM)
+                </>
+              )}
+            </button>
+          </div>
+        )}
       </div>
+
 
       {/* Generation Progress Indicator */}
       {generating && (

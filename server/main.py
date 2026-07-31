@@ -228,6 +228,7 @@ class CreateMusicRequest(BaseModel):
     title: Optional[str] = Field("Bardic Ballad", description="Title of the song")
     duration: int = Field(30, description="Duration in seconds (e.g. 30, 60, 120)")
     nim_amount: float = Field(2500.0, description="NIM cost for music generation")
+    tx_hash: Optional[str] = Field(None, description="Nimiq payment transaction hash")
 
 async def _background_music_generator(track_id: str, prompt: str, duration: int):
     try:
@@ -239,6 +240,7 @@ async def _background_music_generator(track_id: str, prompt: str, duration: int)
 
 @app.post("/api/music/generate")
 async def generate_music(payload: CreateMusicRequest, background_tasks: BackgroundTasks):
+    logger.info(f"Commissioning music track '{payload.title}' ({payload.duration}s) for {payload.nim_amount} NIM. tx_hash: {payload.tx_hash}")
     track_id = str(uuid.uuid4())
     track = database.create_music_track(
         track_id=track_id,
@@ -254,6 +256,7 @@ async def generate_music(payload: CreateMusicRequest, background_tasks: Backgrou
         "status": "generating",
         "message": "Music generation commissioned! Stable Audio is processing your song."
     }
+
 
 @app.get("/api/music/{track_id}/status")
 def get_music_status(track_id: str):

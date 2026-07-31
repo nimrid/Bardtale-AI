@@ -67,7 +67,14 @@ export function getPageImageUrl(orderId: string, pageNum: number): string {
   return `${API_BASE}/orders/${orderId}/images/${pageNum}`;
 }
 
-export async function createMusicTrack(deviceId: string, prompt: string, title?: string, duration: number = 30): Promise<{ track_id: string; status: string }> {
+export async function createMusicTrack(
+  deviceId: string, 
+  prompt: string, 
+  title?: string, 
+  duration: number = 30,
+  nimAmount: number = 2500,
+  txHash?: string
+): Promise<{ track_id: string; status: string }> {
   const res = await fetch(`${API_BASE}/music/generate`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -76,12 +83,14 @@ export async function createMusicTrack(deviceId: string, prompt: string, title?:
       prompt,
       title: title || 'Bardic Ballad',
       duration,
-      nim_amount: 2500.0
+      nim_amount: nimAmount,
+      tx_hash: txHash
     })
   });
   if (!res.ok) throw new Error('Failed to start music generation task');
   return res.json();
 }
+
 
 export async function fetchMusicTrackStatus(trackId: string): Promise<any> {
   const res = await fetch(`${API_BASE}/music/${trackId}/status`);
