@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Tier, CustomizationForm, Order } from './types';
 import { initializeNimiqSdk, fetchUserAccounts } from './services/nimiqSdk';
-import { fetchTiers, createOrder } from './services/api';
+import { fetchTiers, createOrder, fetchOrderStatus } from './services/api';
 import { Header } from './components/Header';
 import { SidebarNav } from './components/SidebarNav';
 import { TierSelector } from './components/TierSelector';
@@ -11,6 +11,7 @@ import { ProgressTracker } from './components/ProgressTracker';
 import { ResultView } from './components/ResultView';
 import { MusicStudio } from './components/MusicStudio';
 import { OrderHistoryModal } from './components/OrderHistoryModal';
+
 
 export const App: React.FC = () => {
   const [mode, setMode] = useState<'story' | 'music'>('story');
@@ -209,9 +210,15 @@ export const App: React.FC = () => {
         deviceId={deviceId}
         isOpen={isHistoryOpen}
         onClose={() => setIsHistoryOpen(false)}
-        onSelectOrder={(ord) => {
+        onSelectOrder={async (ord) => {
           setMode('story');
-          setCompletedOrder(ord);
+          try {
+            const fullOrder = await fetchOrderStatus(ord.id);
+            setCompletedOrder(fullOrder);
+          } catch (e) {
+            console.error('Failed to fetch full order status:', e);
+            setCompletedOrder(ord);
+          }
           setActiveOrderId(ord.id);
           setStep(5);
         }}
@@ -219,3 +226,4 @@ export const App: React.FC = () => {
     </div>
   );
 };
+

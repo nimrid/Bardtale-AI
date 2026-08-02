@@ -368,8 +368,30 @@ export const MusicStudio: React.FC<MusicStudioProps> = ({
           </div>
         </div>
 
-        {/* Song Payment Review Card */}
-        {showPaymentStep ? (
+        {!isSdkAvailable ? (
+          <div style={{
+            marginTop: '24px',
+            padding: '20px',
+            borderRadius: '16px',
+            background: 'rgba(239, 68, 68, 0.12)',
+            border: '1px solid rgba(239, 68, 68, 0.35)',
+            textAlign: 'center'
+          }}>
+            <div style={{ fontWeight: 700, fontSize: '0.95rem', color: '#FCA5A5', marginBottom: '6px' }}>
+              🔒 Nimiq Pay App Required
+            </div>
+            <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '14px', lineHeight: 1.4 }}>
+              Bardic music compositions can only be commissioned and paid for inside the Nimiq Pay app.
+            </p>
+            <a 
+              href={`nimiqpay://miniapp?url=${encodeURIComponent(window.location.origin)}`}
+              className="btn-primary"
+              style={{ display: 'inline-flex', padding: '8px 16px', fontSize: '0.82rem', textDecoration: 'none' }}
+            >
+              Open in Nimiq Pay App
+            </a>
+          </div>
+        ) : showPaymentStep ? (
           <div style={{
             marginTop: '24px',
             padding: '20px',
@@ -403,7 +425,7 @@ export const MusicStudio: React.FC<MusicStudioProps> = ({
             </div>
 
             <h4 className="font-serif gradient-text-gold" style={{ fontSize: '1.2rem', fontWeight: 700, marginBottom: '6px', textAlign: 'center' }}>
-              Confirm & Stake {nimPrice.toLocaleString()} NIM
+              Confirm & Pay {nimPrice.toLocaleString()} NIM
             </h4>
             <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', textAlign: 'center', marginBottom: '16px' }}>
               Mediated by Nimiq Pay native confirmation dialogs. Keys never leave your wallet.
@@ -486,12 +508,14 @@ export const MusicStudio: React.FC<MusicStudioProps> = ({
                 </>
               ) : (
                 <>
-                  <Wallet size={18} /> Pay {nimPrice.toLocaleString()} NIM via Nimiq Wallet
+                  <Wallet size={18} /> Confirm & Pay {nimPrice.toLocaleString()} NIM
                 </>
               )}
             </button>
+
           </div>
         ) : (
+
           /* Generate Commission Button */
           <div style={{ marginTop: '24px', textAlign: 'center' }}>
             <button

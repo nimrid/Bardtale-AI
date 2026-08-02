@@ -118,8 +118,19 @@ def get_orders_by_device(device_id: str) -> List[dict]:
     for r in rows:
         d = dict(r)
         d["customization_fields"] = json.loads(d["customization_fields"])
+        
+        # Attach generation details (story_title, pages, image_paths, pdf_path) if ready
+        gen = get_generation(d["id"])
+        if gen:
+            d["story_title"] = gen.get("story_title")
+            d["pages"] = gen.get("story_json")
+            d["image_paths"] = gen.get("image_paths")
+            d["pdf_path"] = gen.get("pdf_path")
+            d["cost_log"] = gen.get("cost_log")
+            
         results.append(d)
     return results
+
 
 def update_order_status(order_id: str, status: str, wallet_address: Optional[str] = None):
     conn = get_db()

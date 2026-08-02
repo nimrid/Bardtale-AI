@@ -90,12 +90,13 @@ export const PaymentCard: React.FC<PaymentCardProps> = ({
 
       <div style={{ textAlign: 'center', marginBottom: '24px' }}>
         <h2 className="font-serif" style={{ fontSize: '1.5rem', fontWeight: 700, marginBottom: '6px' }}>
-          Confirm & Pay NIM Stake
+          Confirm & Pay {tier.nim_amount} NIM
         </h2>
         <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>
           Your payment gates the Anthropic & Stability AI pipelines on our server.
         </p>
       </div>
+
 
       {/* Payer Account Box */}
       <div style={{
@@ -210,24 +211,50 @@ export const PaymentCard: React.FC<PaymentCardProps> = ({
         </div>
       )}
 
-      <div>
-        <button
-          onClick={handlePay}
-          disabled={isProcessing}
-          className="btn-primary"
-        >
-          {isProcessing ? (
-            <>
-              <div className="animate-spin" style={{ width: '18px', height: '18px', border: '2px solid #0F172A', borderTopColor: 'transparent', borderRadius: '50%' }} />
-              <span>{stepStatus}</span>
-            </>
-          ) : (
-            <>
-              <Wallet size={18} /> Pay {tier.nim_amount} NIM via Nimiq Wallet
-            </>
-          )}
-        </button>
-      </div>
+      {!isSdkAvailable ? (
+        <div style={{
+          background: 'rgba(239, 68, 68, 0.12)',
+          border: '1px solid rgba(239, 68, 68, 0.35)',
+          borderRadius: '16px',
+          padding: '18px',
+          textAlign: 'center',
+          marginBottom: '20px'
+        }}>
+          <div style={{ fontWeight: 700, fontSize: '0.95rem', color: '#FCA5A5', marginBottom: '6px' }}>
+            🔒 Nimiq Pay App Required
+          </div>
+          <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '14px', lineHeight: 1.4 }}>
+            Storybook commissions and AI generations can only be purchased inside the Nimiq Pay app.
+          </p>
+          <a 
+            href={`nimiqpay://miniapp?url=${encodeURIComponent(window.location.origin)}`}
+            className="btn-primary"
+            style={{ display: 'inline-flex', padding: '8px 16px', fontSize: '0.82rem', textDecoration: 'none' }}
+          >
+            Open in Nimiq Pay App
+          </a>
+        </div>
+      ) : (
+        <div>
+          <button
+            onClick={handlePay}
+            disabled={isProcessing}
+            className="btn-primary"
+          >
+            {isProcessing ? (
+              <>
+                <div className="animate-spin" style={{ width: '18px', height: '18px', border: '2px solid #0F172A', borderTopColor: 'transparent', borderRadius: '50%' }} />
+                <span>{stepStatus}</span>
+              </>
+            ) : (
+              <>
+                <Wallet size={18} /> Confirm & Pay {tier.nim_amount} NIM
+              </>
+
+            )}
+          </button>
+        </div>
+      )}
 
       <p style={{ textAlign: 'center', fontSize: '0.72rem', color: 'var(--text-dim)', marginTop: '14px' }}>
         🔒 Mediated by Nimiq Pay native confirmation dialogs. Keys never leave your wallet.
@@ -235,4 +262,5 @@ export const PaymentCard: React.FC<PaymentCardProps> = ({
     </div>
   );
 };
+
 

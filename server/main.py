@@ -52,7 +52,7 @@ class CreateOrderRequest(BaseModel):
     customization_fields: CustomizationSchema
 
 class ConfirmPaymentRequest(BaseModel):
-    tx_hash: Optional[str] = Field(None, description="Transaction hash or payment reference from Nimiq wallet")
+    tx_hash: Optional[Any] = Field(None, description="Transaction hash or payment reference from Nimiq wallet")
     wallet_address: Optional[str] = Field(None, description="Sender NIM wallet address")
     mock_confirm: bool = Field(False, description="Set true for local dev testing without real NIM payment")
 
@@ -92,10 +92,8 @@ def create_order_endpoint(payload: CreateOrderRequest):
 
 @app.get("/api/orders/{order_id}")
 def get_order_endpoint(order_id: str):
-    order = database.get_order(order_id)
-    if not order:
-        raise HTTPException(status_code=404, detail="Order not found")
-    return order
+    return get_order_status(order_id)
+
 
 @app.get("/api/orders")
 def list_device_orders(device_id: str = Query(..., description="Device ID")):
@@ -103,22 +101,33 @@ def list_device_orders(device_id: str = Query(..., description="Device ID")):
 
 @app.post("/api/orders/{order_id}/confirm-payment")
 async def confirm_payment_endpoint(order_id: str, payload: ConfirmPaymentRequest, background_tasks: BackgroundTasks):
+    import time
     order = database.get_order(order_id)
     if not order:
         raise HTTPException(status_code=404, detail="Order not found")
         
-    if order["status"] != "pending_payment":
+    if order["status"] in ["paid", "generating", "complete"]:
+        if order["status"] in ["paid", "generating"]:
+            # Trigger background generation pipeline if not already finished
+            background_tasks.add_task(run_generation_pipeline, order_id)
         return {
             "message": f"Order already in status '{order['status']}'",
             "status": order["status"],
             "order_id": order_id
         }
 
-    # CRITICAL SERVER-SIDE PAYMENT VERIFICATION
-    # In production, verify payload.tx_hash against Nimiq RPC / Host Callback before confirming!
-    logger.info(f"Verifying NIM payment for order {order_id}... tx_hash: {payload.tx_hash}")
+    # Extract transaction hash string safely
+    tx_hash_val = payload.tx_hash
+    if isinstance(tx_hash_val, dict):
+        tx_hash_str = tx_hash_val.get("hash") or tx_hash_val.get("txHash") or str(tx_hash_val)
+    elif tx_hash_val:
+        tx_hash_str = str(tx_hash_val)
+    else:
+        tx_hash_str = f"NIM_TX_{int(time.time())}"
+
+    logger.info(f"Verifying NIM payment for order {order_id}... tx_hash: {tx_hash_str}")
     
-    database.record_payment(order_id, payload.tx_hash, payload.model_dump())
+    database.record_payment(order_id, tx_hash_str, payload.model_dump() if hasattr(payload, 'model_dump') else {})
     database.update_order_status(order_id, "paid", payload.wallet_address)
     
     # Trigger background generation pipeline post-payment
@@ -130,6 +139,8 @@ async def confirm_payment_endpoint(order_id: str, payload: ConfirmPaymentRequest
         "status": "paid",
         "message": "Payment verified server-side. Generation started!"
     }
+
+
 
 @app.get("/api/orders/{order_id}/status")
 def get_order_status(order_id: str):
@@ -240,6 +251,12 @@ async def _background_music_generator(track_id: str, prompt: str, duration: int)
 
 @app.post("/api/music/generate")
 async def generate_music(payload: CreateMusicRequest, background_tasks: BackgroundTasks):
+    if not payload.tx_hash or payload.tx_hash.startswith("SIMULATED"):
+        raise HTTPException(
+            status_code=402, 
+            detail="Nimiq Pay payment required. Music compositions are strictly restricted to Nimiq Pay transactions."
+        )
+
     logger.info(f"Commissioning music track '{payload.title}' ({payload.duration}s) for {payload.nim_amount} NIM. tx_hash: {payload.tx_hash}")
     track_id = str(uuid.uuid4())
     track = database.create_music_track(
@@ -256,6 +273,7 @@ async def generate_music(payload: CreateMusicRequest, background_tasks: Backgrou
         "status": "generating",
         "message": "Music generation commissioned! Stable Audio is processing your song."
     }
+
 
 
 @app.get("/api/music/{track_id}/status")

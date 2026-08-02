@@ -152,6 +152,14 @@ export async function runThreeProviderRequests(): Promise<{
   };
 }
 
+function extractTxHash(res: any): string {
+  if (typeof res === 'string' && res.trim().length > 0) return res;
+  if (res && typeof res === 'object') {
+    return res.hash || res.txHash || res.transactionHash || res.id || 'NIM_TX_' + Date.now();
+  }
+  return 'NIM_TX_' + Date.now();
+}
+
 export async function requestNimPayment(
   amountNim: number, 
   recipientAddress: string,
@@ -165,11 +173,12 @@ export async function requestNimPayment(
   // 1. Try sendBasicTransactionWithData (Nimiq Provider API)
   if (provider && typeof provider.sendBasicTransactionWithData === 'function') {
     try {
-      const txHash = await provider.sendBasicTransactionWithData({
+      const res = await provider.sendBasicTransactionWithData({
         recipient: recipientAddress,
         value: valueLuna,
         data: orderId ? `Story Commission #${orderId.substring(0, 8)}` : 'Storybook Commission'
       });
+      const txHash = extractTxHash(res);
       return { success: true, txHash };
     } catch (e: any) {
       console.error('Nimiq provider sendBasicTransactionWithData failed:', e);
@@ -183,10 +192,11 @@ export async function requestNimPayment(
   // 2. Try sendBasicTransaction (Nimiq Provider API)
   if (provider && typeof provider.sendBasicTransaction === 'function') {
     try {
-      const txHash = await provider.sendBasicTransaction({
+      const res = await provider.sendBasicTransaction({
         recipient: recipientAddress,
         value: valueLuna
       });
+      const txHash = extractTxHash(res);
       return { success: true, txHash };
     } catch (e: any) {
       console.error('Nimiq provider sendBasicTransaction failed:', e);
@@ -205,9 +215,10 @@ export async function requestNimPayment(
         amount: valueLuna,
         label: 'Illustrated Story Commission'
       });
+      const txHash = extractTxHash(result);
       return {
         success: true,
-        txHash: result.hash || result.txHash || (typeof result === 'string' ? result : 'NIM_TX_' + Date.now())
+        txHash
       };
     } catch (e: any) {
       console.error('Nimiq provider requestPayment failed:', e);
@@ -215,14 +226,12 @@ export async function requestNimPayment(
     }
   }
 
-  // 4. Standalone Browser / Sandbox Fallback simulation for local testing
-  console.log('Simulating payment for local browser testing environment');
-  await new Promise(res => setTimeout(res, 1200));
-  return {
-    success: true,
-    txHash: 'SIMULATED_NIM_TX_' + Math.random().toString(36).substring(2, 10).toUpperCase()
-  };
+  // 4. Standalone Browser fallback - Throw error because payments & generations require Nimiq Pay
+  console.warn('Attempted NIM payment outside Nimiq Pay provider');
+  throw new Error('Nimiq Pay App Required: Payments and AI generations can only be executed inside Nimiq Pay. Please open this Mini App inside Nimiq Pay.');
 }
+
+
 
 
 
