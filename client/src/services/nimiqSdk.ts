@@ -74,11 +74,20 @@ export async function initializeNimiqSdk(): Promise<NimiqSdkContext> {
   const win = window as any;
 
   try {
-    // 1. Initialize Nimiq Mini App SDK helper with 10s timeout
-    const nimiq = await init({ timeout: 10000 });
-    if (nimiq) {
-      nimiqProviderInstance = nimiq;
+    // Fast check if provider already injected
+    if (win.nimiq) {
+      nimiqProviderInstance = win.nimiq;
       isAvailable = true;
+    } else {
+      // Race SDK init with 1.5s max timeout to prevent slow loading
+      const nimiq = await Promise.race([
+        init({ timeout: 1500 }),
+        new Promise<null>((res) => setTimeout(() => res(null), 1500))
+      ]);
+      if (nimiq) {
+        nimiqProviderInstance = nimiq;
+        isAvailable = true;
+      }
     }
   } catch (e) {
     console.log('Nimiq Pay SDK initialization info: Running in browser or provider standby');
@@ -87,6 +96,7 @@ export async function initializeNimiqSdk(): Promise<NimiqSdkContext> {
       isAvailable = true;
     }
   }
+
 
   // 2. Obtain device identifier using @nimiq/mini-app-sdk
   const deviceId = await getDeviceId();
